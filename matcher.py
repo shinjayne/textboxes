@@ -1,7 +1,7 @@
 import constants as c
 from constants import layer_boxes, classes, negposratio
 # cant import out_shapes and defaults here since its still not initialized
-from ssd_common import center2cornerbox, calc_jaccard
+from tb_common import center2cornerbox, calc_jaccard
 import numpy as np
 
 def format_output(pred_labels, pred_locs, boxes=None, confidences=None):

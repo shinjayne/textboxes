@@ -19,10 +19,7 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 class TB:
-	def __init__(self, model_dir=None, gpu_fraction=0.7):
-		# config = tf.ConfigProto(allow_soft_placement=True)
-		# config.gpu_options.per_process_gpu_memory_fraction=gpu_fraction
-		# self.sess = tf.Session(config=config)
+	def __init__(self, model_dir=None):
 		self.sess = tf.Session()
 		
 		self.imgs_ph, self.bn, self.output_tensors, self.pred_labels, self.pred_locs = model.model(self.sess)
@@ -46,7 +43,7 @@ class TB:
 
 			self.lr_ph = tf.placeholder(tf.float32, shape=[])
 
-			self.optimizer = tf.train.GradientDescentOptimizer(1e-3).minimize(self.total_loss, global_step=self.global_step)
+			self.optimizer = tf.train.AdamOptimizer(1e-3).minimize(self.total_loss, global_step=self.global_step)
 			print 'run to here'
 		new_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="optimizer")
 		init = tf.variables_initializer(new_vars)
@@ -64,8 +61,7 @@ class TB:
 
 	def single_image(self, sample, min_conf=0.01, nms=0.45):
 		resized_img = cv2.resize(sample, (image_size, image_size))
-		pred_labels_f, pred_locs_f, step = self.sess.run([self.pred_labels, self.pred_locs, self.global_step],
-														feed_dict={self.imgs_ph: [resized_img], self.bn: False})
+		pred_labels_f, pred_locs_f, step = self.sess.run([self.pred_labels, self.pred_locs, self.global_step], feed_dict={self.imgs_ph: [resized_img], self.bn: False})
 		boxes_, confidences_ = matcher.format_output(pred_labels_f[0], pred_locs_f[0])
 		resize_boxes(resized_img, sample, boxes_, scale=float(image_size))
 
@@ -361,7 +357,7 @@ def evaluate_image(path):
 
 if __name__ == "__main__":
 	flags.DEFINE_string("model_dir", "summaries/train0", "model directory")
-	flags.DEFINE_integer("batch_size", 32, "batch size")
+	flags.DEFINE_integer("batch_size", 8, "batch size")
 	flags.DEFINE_boolean("display", True, "display relevant windows")
 	flags.DEFINE_string("mode", "train", "train, images, image, webcam")
 	flags.DEFINE_string("image_path", "", "path to image")
