@@ -66,10 +66,10 @@ class TB:
 		return postprocess_boxes(boxes_, confidences_, min_conf, nms)
 
 def default2cornerbox(default, offsets):
-	c_x = default[0] + offsets[0]
-	c_y = default[1] + offsets[1]
-	w = default[2] + offsets[2]
-	h = default[3] + offsets[3]
+	c_x = default[0] + offsets[0] * default[2]
+	c_y = default[1] + offsets[1] * default[3]
+	w = np.exp(offsets[2])
+	h = np.exp(offsets[3])
 
 	return [c_x - w/2.0, c_y - h/2.0, w, h]
 
