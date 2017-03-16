@@ -38,11 +38,9 @@ class TB:
 		pdb.set_trace()
 		# variables in model are already initialized, so only initialize those declared after
 		with tf.variable_scope("optimizer"):
-
 			self.global_step = tf.Variable(0)
-
-			self.lr_ph = tf.placeholder(tf.float32, shape=[])
-
+			self.lr_ph = tf.placeholder(tf.float32)
+			#To do: segmentation fault issue popped up when initialize optimizer
 			self.optimizer = tf.train.AdamOptimizer(1e-3).minimize(self.total_loss, global_step=self.global_step)
 			print 'run to here'
 		new_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="optimizer")
@@ -76,10 +74,11 @@ def default2cornerbox(default, offsets):
 	return [c_x - w/2.0, c_y - h/2.0, w, h]
 
 def calc_offsets(default, truth):
-	return [truth[0] - default[0],
-			truth[1] - default[1],
-			truth[2] - default[2],
-			truth[3] - default[3]]
+	dX = (truth[0] - default[0]) / float(default[2])
+	dY = (truth[1] - default[1]) / float(default[3])
+	dW = np.log(truth[2] / default[2])
+	dH = np.log(truth[3] / default[3])
+	return [dX, dY, dW, dH]
 
 def prepare_feed(matches):
 	positives_list = []
@@ -116,6 +115,7 @@ def prepare_feed(matches):
 	a_true_locs = np.asarray(true_locs_list)
 
 	return a_positives, a_negatives, a_true_labels, a_true_locs
+
 
 def draw_matches(I, boxes, matches, anns):
 	I = np.copy(I) * 255.0

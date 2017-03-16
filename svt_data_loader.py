@@ -25,7 +25,7 @@ class SVT:
 				w = int(rectangle.get('width'))
 				x = int(rectangle.get('x'))
 				y = int(rectangle.get('y'))
-				rectangles.append(([x,y,w,h], 1))
+				rectangles.append(([x,y,w,h], 0))
 			dataset.append((name, rectangles))
 		return dataset
 
