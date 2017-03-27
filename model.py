@@ -3,7 +3,6 @@ import numpy as np
 # import vgg.tb_base as vgg16
 import vgg.layers as vgg16
 import vgg.basic_layer as bl
-import tf_common as tfc
 from constants import *
 import math
 
@@ -85,6 +84,7 @@ def box_scale(k):
 	return s_k
 
 #caution: boxes should be stored in a numpy array, since using list will trigger segementation fault
+'''
 def default_boxes(out_shapes):
 	boxes = np.ndarray(shape=(6, 38, 38, 12, 4), dtype=np.float64)
 	for o_i in range(len(out_shapes)):
@@ -103,4 +103,30 @@ def default_boxes(out_shapes):
 					c_x = (x + 1.0) / layer_shape[1]
 					boxes[o_i][x][y][2*i + 1] = [c_y, c_x, default_w, default_h]
 
+	return boxes
+'''
+def default_boxes(out_shapes):
+	boxes = []
+
+	for o_i in range(len(out_shapes)):
+		layer_boxes = []
+		layer_shape = out_shapes[o_i]
+		s_k = box_scale(o_i + 1)
+		for x in range(layer_shape[2]):
+			x_boxes = []
+			for y in range(layer_shape[1]):
+				y_boxes = []
+				rs = box_ratios
+				for i in range(len(rs)):
+					scale = s_k
+					default_w = scale * np.sqrt(rs[i])
+					default_h = scale / np.sqrt(rs[i])
+					c_x = (x + 0.5) / float(layer_shape[2])
+					c_y = (y + 0.5) / float(layer_shape[1])
+					y_boxes.append([c_x, c_y, default_w, default_h])
+					c_y = (y + 1.0) / float(layer_shape[1])
+					y_boxes.append([c_x, c_y, default_w, default_h])
+				x_boxes.append(y_boxes)
+			layer_boxes.append(x_boxes)
+		boxes.append(layer_boxes)
 	return boxes

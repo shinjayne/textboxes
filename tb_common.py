@@ -8,19 +8,19 @@ def draw_rect(I, r, c, thickness=1):
 					  (int((r[0] + max(r[2], 0)) * image_size), int((r[1] + max(r[3], 0)) * image_size)),
 					  c, thickness)
 
-def draw_ann(I, r, text, color=(255, 0, 255), confidence=-1):
-	draw_rect(I, r, color, 1)
-	cv2.rectangle(I, (int(r[0] * image_size), int(r[1] * image_size - 15)),
-				  (int(r[0] * image_size + 100), int(r[1] * image_size)),
-				  color, -1)
+# def draw_ann(I, r, text, color=(255, 0, 255), confidence=-1):
+# 	draw_rect(I, r, color, 1)
+# 	cv2.rectangle(I, (int(r[0] * image_size), int(r[1] * image_size - 15)),
+# 				  (int(r[0] * image_size + 100), int(r[1] * image_size)),
+# 				  color, -1)
 
-	text_ = text
+# 	text_ = text
 
-	if confidence >= 0:
-		text_ += ": %0.2f" % confidence
+# 	if confidence >= 0:
+# 		text_ += ": %0.2f" % confidence
 
-	cv2.putText(I, text_, (int(r[0] * image_size), int((r[1]) * image_size)),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
+# 	cv2.putText(I, text_, (int(r[0] * image_size), int((r[1]) * image_size)),
+# 				cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
 
 def center2cornerbox(rect):
 	return [rect[0] - rect[2]/2.0, rect[1] - rect[3]/2.0, rect[2], rect[3]]

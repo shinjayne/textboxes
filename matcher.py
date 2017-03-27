@@ -51,7 +51,7 @@ def get_top_confidences(pred_labels, top_k):
 	confidences = []
 
 	for logits in pred_labels:
-		probs = np.exp(logits) / (np.sum(np.exp(logits)) + 1e-3)
+		probs = np.exp(logits) / np.add(np.sum(np.exp(logits)), 1e-3)
 		top_label = np.amax(probs)
 		confidences.append(top_label)
 
@@ -65,19 +65,18 @@ def get_top_confidences(pred_labels, top_k):
 class Matcher:
 	def __init__(self):
 		self.index2indices = []
-		print 'run to here'
 		for o_i in range(len(layer_boxes)):
-			for y in range(c.out_shapes[o_i][2]):
-				for x in range(c.out_shapes[o_i][1]):
+			for x in range(c.out_shapes[o_i][2]):
+				for y in range(c.out_shapes[o_i][1]):
 					for i in range(layer_boxes[o_i]):
-						self.index2indices.append([o_i, y, x, i])
+						self.index2indices.append([o_i, x, y, i])
 
 	def match_boxes(self, pred_labels, anns):
-		matches = [[[[None for i in range(c.layer_boxes[o])] for x in range(c.out_shapes[o][1])] for y in range(c.out_shapes[o][2])]
+		matches = [[[[None for i in range(c.layer_boxes[o])] for y in range(c.out_shapes[o][1])] for y in range(c.out_shapes[o][2])]
 				 for o in range(len(layer_boxes))]
 		positive_count = 0
 
-		for index, (gt_box, id) in zip(range(len(anns)), anns):
+		for index, (gt_box, box_id) in zip(range(len(anns)), anns):
 
 			top_match = (None, 0)
 
@@ -93,7 +92,7 @@ class Matcher:
 							box = c.defaults[o][x][y][i]
 							jacc = calc_jaccard(gt_box, center2cornerbox(box)) #gt_box is corner, box is center-based so convert
 							if jacc >= 0.5:
-								matches[o][x][y][i] = (gt_box, id)
+								matches[o][x][y][i] = (gt_box, box_id)
 								positive_count += 1
 							if jacc > top_match[1]:
 								top_match = ([o, x, y, i], jacc)
@@ -102,7 +101,7 @@ class Matcher:
 			#if box's jaccard is <0.5 but is the best
 			if top_box is not None and matches[top_box[0]][top_box[1]][top_box[2]][top_box[3]] is None:
 				positive_count += 1
-				matches[top_box[0]][top_box[1]][top_box[2]][top_box[3]] = (gt_box, id)
+				matches[top_box[0]][top_box[1]][top_box[2]][top_box[3]] = (gt_box, box_id)
 
 		negative_max = positive_count * negposratio
 		negative_count = 0

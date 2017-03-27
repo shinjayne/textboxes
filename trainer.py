@@ -7,13 +7,11 @@ import constants as c
 from constants import layer_boxes, classes
 from tb_common import *
 import numpy as np
-import tf_common as tfc
 import signal
 import sys
 import cv2
 import colorsys
 import time
-import pdb
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -25,24 +23,19 @@ class TB:
 		self.imgs_ph, self.bn, self.output_tensors, self.pred_labels, self.pred_locs = model.model(self.sess)
 
 		total_boxes = self.pred_labels.get_shape().as_list()[1]
-		print total_boxes
 		self.positives_ph, self.negatives_ph, self.true_labels_ph, self.true_locs_ph, self.total_loss, self.class_loss, self.loc_loss = \
 			model.loss(self.pred_labels, self.pred_locs, total_boxes)
 
 		out_shapes = [out.get_shape().as_list() for out in self.output_tensors]
 
 		c.out_shapes = out_shapes
-		print out_shapes
 		
 		c.defaults = model.default_boxes(out_shapes)
-		pdb.set_trace()
 		# variables in model are already initialized, so only initialize those declared after
 		with tf.variable_scope("optimizer"):
 			self.global_step = tf.Variable(0)
 			self.lr_ph = tf.placeholder(tf.float32)
-			#To do: segmentation fault issue popped up when initialize optimizer
 			self.optimizer = tf.train.AdamOptimizer(1e-3).minimize(self.total_loss, global_step=self.global_step)
-			print 'run to here'
 		new_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="optimizer")
 		init = tf.variables_initializer(new_vars)
 		self.sess.run(init)
@@ -87,8 +80,8 @@ def prepare_feed(matches):
 	true_locs_list = []
 
 	for o in range(len(layer_boxes)):
-		for y in range(c.out_shapes[o][2]):
-			for x in range(c.out_shapes[o][1]):
+		for x in range(c.out_shapes[o][2]):
+			for y in range(c.out_shapes[o][1]):
 				for i in range(layer_boxes[o]):
 					match = matches[o][x][y][i]
 
@@ -121,8 +114,8 @@ def draw_matches(I, boxes, matches, anns):
 	I = np.copy(I) * 255.0
 
 	for o in range(len(layer_boxes)):
-		for y in range(c.out_shapes[o][2]):
-			for x in range(c.out_shapes[o][1]):
+		for x in range(c.out_shapes[o][2]):
+			for y in range(c.out_shapes[o][1]):
 				for i in range(layer_boxes[o]):
 					match = matches[o][x][y][i]
 
@@ -139,10 +132,8 @@ def draw_matches(I, boxes, matches, anns):
 						# elif s == 2:
 						#    draw_rect(I, boxes[o][x][y][i], (0, 0, 255), 2)
 
-	for gt_box, id in anns:
+	for gt_box in anns:
 		draw_rect(I, gt_box, (0, 255, 0), 3)
-		cv2.putText(I, 'Text', (int(gt_box[0] * image_size), int((gt_box[1] + gt_box[3]) * image_size)),
-					cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0))
 
 	I = cv2.cvtColor(I.astype(np.uint8), cv2.COLOR_RGB2BGR)
 	cv2.imshow("matches", I)
@@ -153,8 +144,8 @@ def draw_matches2(I, pos, neg, true_labels, true_locs):
 	index = 0
 
 	for o in range(len(layer_boxes)):
-		for y in range(c.out_shapes[o][2]):
-			for x in range(c.out_shapes[o][1]):
+		for x in range(c.out_shapes[o][2]):
+			for y in range(c.out_shapes[o][1]):
 				for i in range(layer_boxes[o]):
 					if pos[index] > 0:
 						d = c.defaults[o][x][y][i]
@@ -162,9 +153,6 @@ def draw_matches2(I, pos, neg, true_labels, true_locs):
 						draw_rect(I, coords, (0, 255, 0))
 						coords = center2cornerbox(d)
 						draw_rect(I, coords, (0, 0, 255))
-						cv2.putText(I, 'Text',
-									(int(coords[0] * image_size), int((coords[1] + coords[3]) * image_size)),
-									cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
 					elif neg[index] > 0:
 						pass
 						#d = defaults[o][x][y][i]
@@ -228,8 +216,6 @@ def draw_outputs(img, boxes, confidences, wait=1):
 			c = colorsys.hsv_to_rgb(((top_label * 17) % 255) / 255.0, 1.0, 1.0)
 			c = tuple([255*c[i] for i in range(3)])
 
-			draw_ann(I, box, 'Text', color=c, confidence=conf)
-
 	I = cv2.cvtColor(I.astype(np.uint8), cv2.COLOR_RGB2BGR)
 	cv2.imshow("outputs", I)
 	cv2.waitKey(wait)
@@ -247,7 +233,7 @@ def start_train():
 
 	signal.signal(signal.SIGINT, signal_handler)
 
-	summary_writer = tf.train.SummaryWriter(FLAGS.model_dir)
+	# summary_writer = tf.train.SummaryWriter(FLAGS.model_dir)
 	box_matcher = Matcher()
 
 	train_loader = sLoader.SVT('./svt1/train.xml', './svt1/test.xml')
@@ -300,9 +286,9 @@ def start_train():
 		print("%i: %f (%f secs)" % (step, loss_f, t))
 		t = time.time()
 
-		tfc.summary_float(step, "loss", loss_f, summary_writer)
-		tfc.summary_float(step, "class loss", c_loss_f, summary_writer)
-		tfc.summary_float(step, "loc loss", l_loss_f, summary_writer)
+		# tfc.summary_float(step, "loss", loss_f, summary_writer)
+		# tfc.summary_float(step, "class loss", c_loss_f, summary_writer)
+		# tfc.summary_float(step, "loc loss", l_loss_f, summary_writer)
 
 		if step % 1000 == 0:
 			tb.saver.save(tb.sess, "%s/ckpt" % FLAGS.model_dir, step)

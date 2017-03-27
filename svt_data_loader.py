@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import cv2
 import numpy as np
 import random
-
+#All feeded data should be in [x,y,w,h] format(left top based corner box)
 class SVT:
 	def __init__(self, trainPath=None, testPath=None):
 		trainList = None
@@ -21,11 +21,11 @@ class SVT:
 			rectangles = []
 			taggedRectangles = image.find('taggedRectangles')
 			for rectangle in taggedRectangles.findall('taggedRectangle'):
-				h = int(rectangle.get('height'))
-				w = int(rectangle.get('width'))
-				x = int(rectangle.get('x'))
-				y = int(rectangle.get('y'))
-				rectangles.append(([x,y,w,h], 0))
+				h = float(rectangle.get('height')) / 300.0
+				w = float(rectangle.get('width')) / 300.0
+				x = float(rectangle.get('x')) / 300.0
+				y = float(rectangle.get('y')) / 300.0
+				rectangles.append([x,y,w,h], 0)
 			dataset.append((name, rectangles))
 		return dataset
 
@@ -38,13 +38,13 @@ class SVT:
 			datalist = self.testList
 		randomIndex = random.sample(range(len(datalist)), batches)
 		images = []
-		anns = [datalist[x][1] for x in randomIndex]
 		for index in randomIndex:
 			fileName = './svt1/' + datalist[index][0]
 			img = cv2.imread(fileName, cv2.IMREAD_COLOR)
 			resized = cv2.resize(img, (imgW, imgH))
 			resized = np.multiply(resized, 1.0/255.0)
 			images.append(resized)
+			anns.append(datalist[x][1])
 		images = np.asarray(images)
 		return (images, anns)
 
