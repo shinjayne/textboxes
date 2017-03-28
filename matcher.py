@@ -16,31 +16,29 @@ def format_output(pred_labels, pred_locs, boxes=None, confidences=None):
 	index = 0
 
 	for o_i in range(len(layer_boxes)):
-		for y in range(c.out_shapes[o_i][2]):
-			for x in range(c.out_shapes[o_i][1]):
+		for x in range(c.out_shapes[o_i][2]):
+			for y in range(c.out_shapes[o_i][1]):
 				for i in range(layer_boxes[o_i]):
 					diffs = pred_locs[index]
-
-					w = c.defaults[o_i][x][y][i][2] + diffs[2]
-					h = c.defaults[o_i][x][y][i][3] + diffs[3]
-
-					c_x = c.defaults[o_i][x][y][i][0] + diffs[0]
-					c_y = c.defaults[o_i][x][y][i][1] + diffs[1]
-
+					original = c.defaults[o_i][x][y][i]
+					c_x = original[0] + original[2] * diffs[0]
+					c_y = original[1] + original[3] * diffs[1]
+					w = original[2] * np.exp(diffs[2])
+					h = original[3] * np.exp(diffs[3])
 					boxes[o_i][x][y][i] = [c_x, c_y, w, h]
 					logits = pred_labels[index]
 					#if np.argmax(logits) != classes+1:
 					info = ([o_i, x, y, i], np.amax(np.exp(logits) / (np.sum(np.exp(logits)) + 1e-3)), np.argmax(logits))
 						# indices, max probability, corresponding label
-					if len(confidences) < index+1:
-						confidences.append(info)
-					else:
-						confidences[index] = info
+					# if len(confidences) < index+1:
+					# 	confidences.append(info)
+					# else:
+					# 	confidences[index] = info
 					#else:
 					#    logits = pred_labels[index][:-1]
 					#    confidences.append(([o_i, x, y, i], np.amax(np.exp(logits) / (np.sum(np.exp(logits)) + 1e-3)),
 					#                        np.argmax(logits)))
-
+					confidences.append(info)
 					index += 1
 
 	#sorted_confidences = sorted(confidences, key=lambda tup: tup[1])[::-1]
